@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        #tetris {
+            border: 4px solid black;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="tetris" width="300" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById("tetris");
+        const context = canvas.getContext("2d");
+        const ROWS = 20;
+        const COLUMNS = 10;
+        const BLOCK_SIZE = 30;
+        const board = Array.from({ length: ROWS }, () => Array(COLUMNS).fill(0));
+
+        const tetrominoes = [
+            { shape: [[1, 1, 1, 1]], className: "tetromino-i" }, // I
+            { shape: [[1, 1], [1, 1]], className: "tetromino-o" }, // O
+            { shape: [[0, 1, 0], [1, 1, 1]], className: "tetromino-t" }, // T
+            { shape: [[1, 0, 0], [1, 1, 1]], className: "tetromino-l" }, // L
+            { shape: [[0, 0, 1], [1, 1, 1]], className: "tetromino-j" }, // J
+            { shape: [[0, 1, 1], [1, 1, 0]], className: "tetromino-s" }, // S
+            { shape: [[1, 1, 0], [0, 1, 1]], className: "tetromino-z" }  // Z
+        ];
+        
+        let currentPiece = { ...tetrominoes[Math.floor(Math.random() * tetrominoes.length)] };
+        currentPiece.x = 3;
+        currentPiece.y = 0;
+        
+        function getBlockColor(className) {
+            const tempDiv = document.createElement("div");
+            tempDiv.className = className;
+            document.body.appendChild(tempDiv);
+            const color = window.getComputedStyle(tempDiv).backgroundColor;
+            document.body.removeChild(tempDiv);
+            return color !== "rgba(0, 0, 0, 0)" ? color : getDefaultColor(className);
+        }
+        
+        function getDefaultColor(className) {
+            const defaultColors = {
+                "tetromino-i": "cyan",
+                "tetromino-o": "yellow",
+                "tetromino-t": "purple",
+                "tetromino-l": "orange",
+                "tetromino-j": "blue",
+                "tetromino-s": "green",
+                "tetromino-z": "red"
+            };
+            return defaultColors[className] || "gray";
+        }
+        
+        function drawBlock(x, y, color) {
+            context.fillStyle = color;
+            context.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            context.strokeStyle = "#222";
+            context.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+        
+        function drawBoard() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLUMNS; x++) {
+                    if (board[y][x]) {
+                        drawBlock(x, y, board[y][x]);
+                    }
+                }
+            }
+        }
+
+        function drawPiece() {
+            const color = getBlockColor(currentPiece.className);
+            currentPiece.shape.forEach((row, dy) => {
+                row.forEach((value, dx) => {
+                    if (value) {
+                        drawBlock(currentPiece.x + dx, currentPiece.y + dy, color);
+                    }
+                });
+            });
+        }
+
+        function rotatePiece() {
+            const rotated = currentPiece.shape[0].map((_, i) => currentPiece.shape.map(row => row[i])).reverse();
+            const oldShape = currentPiece.shape;
+            currentPiece.shape = rotated;
+            if (collision()) {
+                currentPiece.shape = oldShape;
+            }
+        }
+
+        function movePiece(dx, dy) {
+            currentPiece.x += dx;
+            currentPiece.y += dy;
+            if (collision()) {
+                currentPiece.x -= dx;
+                currentPiece.y -= dy;
+                return false;
+            }
+            return true;
+        }
+
+        function movePieceDown() {
+            if (!movePiece(0, 1)) {
+                mergePiece();
+                currentPiece = { ...tetrominoes[Math.floor(Math.random() * tetrominoes.length)] };
+                currentPiece.x = 3;
+                currentPiece.y = 0;
+            }
+        }
+
+        function collision() {
+            return currentPiece.shape.some((row, dy) =>
+                row.some((value, dx) =>
+                    value && (
+                        currentPiece.x + dx < 0 ||
+                        currentPiece.x + dx >= COLUMNS ||
+                        currentPiece.y + dy >= ROWS ||
+                        board[currentPiece.y + dy]?.[currentPiece.x + dx] !== 0
+                    )
+                )
+            );
+        }
+
+        function mergePiece() {
+            const color = getBlockColor(currentPiece.className);
+            currentPiece.shape.forEach((row, dy) => {
+                row.forEach((value, dx) => {
+                    if (value) {
+                        board[currentPiece.y + dy][currentPiece.x + dx] = color;
+                    }
+                });
+            });
+        }
+
+        function update() {
+            movePieceDown();
+            drawBoard();
+            drawPiece();
+            setTimeout(update, 500);
+        }
+        
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowLeft") movePiece(-1, 0);
+            if (event.key === "ArrowRight") movePiece(1, 0);
+            if (event.key === "ArrowDown") movePieceDown();
+            if (event.key === " ") rotatePiece();
+        });
+
+        update();
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+.tetromino-i {
+    background-color: cyan;
+}
+
+.tetromino-o {
+    background-color: yellow;
+}
+
+.tetromino-t {
+    background-color: purple;
+}
+
+.tetromino-l {
+    background-color: orange;
+}
+
+.tetromino-j {
+    background-color: blue;
+}
+
+.tetromino-s {
+    background-color: green;
+}
+
+.tetromino-z {
+    background-color: red;
+}
